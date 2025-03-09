@@ -122,7 +122,7 @@
             participants.forEach(participant => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${participant.name}</td>
+                    <td class="name-cell">${participant.name}</td>
                     <td>${participant.gender}</td>
                     <td class="age-group-cell"><div class="spinner"></div></td>
                     <td>${participant.team}</td>
@@ -158,6 +158,9 @@
 
                         const ageGroupCell = tableBody.rows[absoluteIndex].querySelector('.age-group-cell');
                         ageGroupCell.innerHTML = itraData.ageGroup;
+
+                        const nameCell = tableBody.rows[absoluteIndex].querySelector('.name-cell');
+                        nameCell.innerHTML = '<a href="https://itra.run/RunnerSpace/' + itraData.runnerId + '">' + participant.name + '</a>';
 
                     } catch (error) {
                         console.error(`Error fetching ITRA for ${participant.name}:`, error);
