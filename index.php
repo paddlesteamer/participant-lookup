@@ -101,17 +101,36 @@
             tableBody.innerHTML = ''; // Clear the table before fetching new participants
 
             const raceUrl = document.getElementById('urlInput').value; // Get URL from input field
+            const fileInput = document.getElementById('fileInput'); // Get file input
 
-            const response = await fetch('parse.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: raceUrl }),
-            });
+            let participants = [];
 
-            const data = await response.json();
-            displayParticipants(data.participants);
+            // Check if a file is uploaded
+            if (fileInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch('upload.php', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                participants = data.participants; // Assuming the response contains a 'participants' array
+            } else if (raceUrl) {
+                const response = await fetch('parse.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: raceUrl }),
+                });
+
+                const data = await response.json();
+                participants = data.participants;
+            }
+
+            displayParticipants(participants);
         }
 
         async function displayParticipants(participants) {
@@ -123,7 +142,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="name-cell">${participant.name}</td>
-                    <td>${participant.gender}</td>
+                    <td class="gender-cell">${participant.gender}</td>
                     <td class="age-group-cell"><div class="spinner"></div></td>
                     <td>${participant.team}</td>
                     <td class="itra-cell"><div class="spinner"></div></td> <!-- Show loading spinner -->
@@ -161,6 +180,9 @@
 
                         const nameCell = tableBody.rows[absoluteIndex].querySelector('.name-cell');
                         nameCell.innerHTML = '<a href="https://itra.run/RunnerSpace/' + itraData.runnerId + '">' + participant.name + '</a>';
+
+                        const genderCell = tableBody.rows[absoluteIndex].querySelector('.gender-cell');
+                        genderCell.innerHTML = itraData.gender;
 
                     } catch (error) {
                         console.error(`Error fetching ITRA for ${participant.name}:`, error);
@@ -217,6 +239,7 @@
 
     <div class="form-container">
         <input type="text" id="urlInput" value="https://www.efesultra.org/utrail-ephesus-120k-%e2%80%8b/" />
+        <input type="file" id="fileInput" accept=".txt" />
         <button onclick="fetchParticipants()">Yarışmacıları Getir</button>
     </div>
     <table id="participantsTable">

@@ -1,5 +1,45 @@
 <?php
-    function getParticipantsFromIframe($iframe_url) {
+
+    function getParticipantsFromCenturionRunning($url) {
+        // Initialize cURL
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:135.0) Gecko/20100101 Firefox/135.0');
+        $content = curl_exec($ch);
+        curl_close($ch);
+
+        // Parse HTML content
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        @$dom->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+        $xpath = new DOMXPath($dom);
+
+        // Get all divs with class col-xs-5
+        $divs = $xpath->query("//div[contains(@class, 'col-xs-5')]");
+        $participants = [];
+
+        $firstRow = true;
+        foreach ($divs as $div) {
+            if ($firstRow) {
+                $firstRow = false;
+                continue;
+            }
+
+            $name = trim($div->textContent);
+            if (!empty($name)) {
+                $participants[] = [
+                    'name' => $name,
+                    'team' => '',
+                    'gender' => ''
+                ];
+            }
+        }
+
+        return $participants;
+    }
+
+    function getParticipantsFromAppHurra($iframe_url) {
         // Get iframe content
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $iframe_url);
@@ -25,8 +65,8 @@
                     'name' => trim($cells->item(0)->textContent) . ' ' . trim($cells->item(1)->textContent),
                     'team' => trim($cells->item(2)->textContent), 
                     'gender' => $cells->item(4)->getElementsByTagName('i')->length > 0 ? 
-                        (strpos($cells->item(4)->getElementsByTagName('i')->item(0)->getAttribute('class'), 'Erkek') !== false ? 'Erkek' : 
-                        (strpos($cells->item(4)->getElementsByTagName('i')->item(0)->getAttribute('class'), 'Kadin') !== false ? 'Kadin' : ''))
+                        (strpos($cells->item(4)->getElementsByTagName('i')->item(0)->getAttribute('class'), 'Erkek') !== false ? 'M' : 
+                        (strpos($cells->item(4)->getElementsByTagName('i')->item(0)->getAttribute('class'), 'Kadin') !== false ? 'F' : ''))
                         : trim($cells->item(4)->textContent)
                 ];
                 $participants[] = $participant;
@@ -53,7 +93,11 @@
 
     // If domain is apphurra.com, call function directly
     if (strpos($domain, 'apphurra.com') !== false) {
-        $participants = getParticipantsFromIframe($url);
+        $participants = getParticipantsFromAppHurra($url);
+        echo json_encode(['participants' => $participants]);
+        exit;
+    } else if (strpos($domain, 'centurionrunning.com') !== false) {
+        $participants = getParticipantsFromCenturionRunning($url);
         echo json_encode(['participants' => $participants]);
         exit;
     }
@@ -78,7 +122,7 @@
     if ($iframes->length > 0) {
         $iframe_url = $iframes->item(0)->getAttribute('src');
 
-        $participants = getParticipantsFromIframe($iframe_url);
+        $participants = getParticipantsFromAppHurra($iframe_url);
 
         
         echo json_encode(['participants' => $participants]);

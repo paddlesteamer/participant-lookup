@@ -35,7 +35,7 @@ function queryItra($name) {
     // Return empty string if no results, otherwise return PI of first result
     return $result['resultCount'] == 0 ? null : [
         'pi' => $result['results'][0]['pi'],
-        'gender' => $result['results'][0]['gender'],
+        'gender' => ($result['results'][0]['gender'] == 'H' ? 'M' : 'F'),
         'ageGroup' => $result['results'][0]['ageGroup'],
         'runnerId' => $result['results'][0]['runnerId']
     ];
