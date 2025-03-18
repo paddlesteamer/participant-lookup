@@ -31,13 +31,32 @@ function queryItra($name) {
 
     // Parse response
     $result = json_decode($response, true);
+    
+    $response1 = $result['response1'];
+    $response2 = $result['response2'];
+    $response3 = $result['response3'];
+
+    $key = base64_decode($response3);
+    $iv = base64_decode($response2);
+
+    // Decrypt using the key
+    $decrypted = openssl_decrypt($response1, 'AES-256-CBC', $key, 0, $iv);
+
+    if ($decrypted == false) {
+        $result = array(
+            'ResultCount' => 0,
+            'Results' => array()
+        );
+    } else {
+        $result = json_decode($decrypted, true);
+    }
 
     // Return empty string if no results, otherwise return PI of first result
-    return $result['resultCount'] == 0 ? null : [
-        'pi' => $result['results'][0]['pi'],
-        'gender' => ($result['results'][0]['gender'] == 'H' ? 'M' : 'F'),
-        'ageGroup' => $result['results'][0]['ageGroup'],
-        'runnerId' => $result['results'][0]['runnerId']
+    return $result['ResultCount'] == 0 ? null : [
+        'pi' => $result['Results'][0]['Pi'],
+        'gender' => ($result['Results'][0]['Gender'] == 'H' ? 'M' : 'F'),
+        'ageGroup' => $result['Results'][0]['AgeGroup'],
+        'runnerId' => $result['Results'][0]['RunnerId']
     ];
 }
 
